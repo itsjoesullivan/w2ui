@@ -200,43 +200,93 @@
 		},
 			
 		refresh: function (id) {
+			console.log('refresh',id);
 			if (window.getSelection) window.getSelection().removeAllRanges(); // clear selection 
-			if (String(id) == 'undefined') {
-				// refresh all
-				for (var i in this.tabs) this.refresh(this.tabs[i].id);
-			}
-			// event before
-			var eventData = this.trigger({ phase: 'before', type: 'refresh', target: (typeof id != 'undefined' ? id : this.name), tab: this.get(id) });	
-			if (eventData.stop === true) return false;
-			// create or refresh only one item
-			var tab = this.get(id);
-			if (tab == null) return;
-			
-			var jq_el   = $(this.box).find('.w2ui-tabs #tabs_'+ this.name +'_tab_'+ tab.id);
-			var tabHTML = (tab.closable ? '<div class="w2ui-tab-close" onclick="w2ui[\''+ this.name +'\'].doClose(\''+ tab.id +'\', event);"></div>' : '') +
-						  '	<div class="w2ui-tab '+ (this.active == tab.id ? 'active' : '') +'" title="'+ (typeof tab.hint != 'undefined' ? tab.hint : '') +'"'+
-						  '		onclick="w2ui[\''+ this.name +'\'].doClick(\''+ tab.id +'\', event);">' + tab.caption + '</div>';
-			if (jq_el.length == 0) {
-				// does not exist - create it
-				var addStyle = '';
-				if (tab.hidden) { addStyle += 'display: none;'; }
-				if (tab.disabled) { addStyle += 'opacity: 0.2; -moz-opacity: 0.2; -webkit-opacity: 0.2; -o-opacity: 0.2; filter:alpha(opacity=20);'; }
-				html = '<td id="tabs_'+ this.name + '_tab_'+ tab.id +'" style="'+ addStyle +'" valign="middle">'+ tabHTML + '</td>';
-				if (this.getIndex(id) != this.tabs.length-1 && $(this.box).find('.w2ui-tabs #tabs_'+ this.name +'_tab_'+ this.tabs[parseInt(this.getIndex(id))+1].id).length > 0) {
-					$(this.box).find('.w2ui-tabs #tabs_'+ this.name +'_tab_'+ this.tabs[parseInt(this.getIndex(id))+1].id).before(html);
-				} else {
-					$(this.box).find('.w2ui-tabs #tabs_'+ this.name +'_right').before(html);
-				}
-			} else {
-				// refresh
-				jq_el.html(tabHTML);
-				if (tab.hidden) { jq_el.css('display', 'none'); }
-							else { jq_el.css('display', ''); }
-				if (tab.disabled) { jq_el.css({ 'opacity': '0.2', '-moz-opacity': '0.2', '-webkit-opacity': '0.2', '-o-opacity': '0.2', 'filter': 'alpha(opacity=20)' }); }
-							else { jq_el.css({ 'opacity': '1', '-moz-opacity': '1', '-webkit-opacity': '1', '-o-opacity': '1', 'filter': 'alpha(opacity=100)' }); }
-			}
-			// event after
-			this.trigger($.extend(eventData, { phase: 'after' }));
+if (String(id) == 'undefined') {
+	// refresh all
+	for (var i in this.tabs) this.refresh(this.tabs[i].id);
+}
+// event before
+var eventData = this.trigger({ phase: 'before', type: 'refresh', target: (typeof id != 'undefined' ? id : this.name), tab: this.get(id) });	
+if (eventData.stop === true) return false;
+// create or refresh only one item
+var tab = this.get(id);
+if (tab == null) return;
+console.log("tab is: ",tab);
+
+/*var tabEl = [];
+if(tab.closable) {
+    var closable = json2html({
+        'div.w2ui-tab-close': ''
+    });
+    $(closable).click(w2ui[this.name].doClose(tab.id, event));
+}*/
+
+//set up the title of it
+var tabKey = "div.w2ui-tab";
+if(this.active == tab.id) {
+    tabKey += ".active";
+}
+
+//create the object
+var tabObj = {};
+
+//assign the key
+tabObj[tabKey] = {};
+
+var name = this.name,
+	id = tab.id,
+	box = this.box;
+
+
+if('caption' in tab && tab.caption.length) {
+	tabObj[tabKey].html = tab.caption;
+}
+
+//if hint, give it to the title
+if('hint' in tab && tab.hint.length) {
+    tabObj[tabKey].title = tab.hint;
+}
+
+//render the object as an HTML element
+var tabEl = json2html(tabObj);
+
+//append the listener
+$(tabEl).click(function() {
+    w2ui[name].doClick(id, event);
+});
+
+console.log('tabEl is: ',tabEl);
+
+var getContainer = function() {
+    return $(box).find('.w2ui-tabs #tabs_'+ name +'_tab_'+ id);
+}
+if (getContainer().length == 0) {
+	// does not exist - create it
+	var addStyle = '';
+	if (tab.hidden) { addStyle += 'display: none;'; }
+	if (tab.disabled) { addStyle += 'opacity: 0.2; -moz-opacity: 0.2; -webkit-opacity: 0.2; -o-opacity: 0.2; filter:alpha(opacity=20);'; }
+	html = '<td id="tabs_'+ this.name + '_tab_'+ tab.id +'" style="'+ addStyle +'" valign="middle">'+ /*tabHTML +*/ '</td>';
+	if (this.getIndex(id) != this.tabs.length-1 && $(this.box).find('.w2ui-tabs #tabs_'+ this.name +'_tab_'+ this.tabs[parseInt(this.getIndex(id))+1].id).length > 0) {
+		$(this.box).find('.w2ui-tabs #tabs_'+ this.name +'_tab_'+ this.tabs[parseInt(this.getIndex(id))+1].id).before(html);
+	} else {
+		$(this.box).find('.w2ui-tabs #tabs_'+ this.name +'_right').before(html);
+	}
+}
+	// refresh
+	var jq_el = getContainer();
+console.log("now container is: ", jq_el);
+	jq_el.html(tabEl); //add the main element
+    if(tab.closable && typeof closable !== 'undefined') { //if we rendered the closable one, prepend it.
+        jq_el.prepend(closable);
+    }
+    
+	if (tab.hidden) { jq_el.css('display', 'none'); }
+				else { jq_el.css('display', ''); }
+	if (tab.disabled) { jq_el.css({ 'opacity': '0.2', '-moz-opacity': '0.2', '-webkit-opacity': '0.2', '-o-opacity': '0.2', 'filter': 'alpha(opacity=20)' }); }
+				else { jq_el.css({ 'opacity': '1', '-moz-opacity': '1', '-webkit-opacity': '1', '-o-opacity': '1', 'filter': 'alpha(opacity=100)' }); }
+// event after
+this.trigger($.extend(eventData, { phase: 'after' }));
 		},
 		
 		render: function (box) {
