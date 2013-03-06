@@ -214,13 +214,18 @@ var tab = this.get(id);
 if (tab == null) return;
 console.log("tab is: ",tab);
 
-/*var tabEl = [];
+var name = this.name,
+	id = tab.id,
+	box = this.box;
+
 if(tab.closable) {
     var closable = json2html({
         'div.w2ui-tab-close': ''
     });
-    $(closable).click(w2ui[this.name].doClose(tab.id, event));
-}*/
+    $(closable).click(function() {
+	w2ui[name].doClose(id, event);
+});
+}
 
 //set up the title of it
 var tabKey = "div.w2ui-tab";
@@ -234,9 +239,6 @@ var tabObj = {};
 //assign the key
 tabObj[tabKey] = {};
 
-var name = this.name,
-	id = tab.id,
-	box = this.box;
 
 
 if('caption' in tab && tab.caption.length) {
