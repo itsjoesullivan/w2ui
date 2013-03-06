@@ -200,7 +200,6 @@
 		},
 			
 		refresh: function (id) {
-			console.log('refresh',id);
 			if (window.getSelection) window.getSelection().removeAllRanges(); // clear selection 
 if (String(id) == 'undefined') {
 	// refresh all
@@ -212,7 +211,6 @@ if (eventData.stop === true) return false;
 // create or refresh only one item
 var tab = this.get(id);
 if (tab == null) return;
-console.log("tab is: ",tab);
 
 var name = this.name,
 	id = tab.id,
@@ -258,7 +256,6 @@ $(tabEl).click(function() {
     w2ui[name].doClick(id, event);
 });
 
-console.log('tabEl is: ',tabEl);
 
 var getContainer = function() {
     return $(box).find('.w2ui-tabs #tabs_'+ name +'_tab_'+ id);
@@ -277,7 +274,6 @@ if (getContainer().length == 0) {
 }
 	// refresh
 	var jq_el = getContainer();
-console.log("now container is: ", jq_el);
 	jq_el.html(tabEl); //add the main element
     if(tab.closable && typeof closable !== 'undefined') { //if we rendered the closable one, prepend it.
         jq_el.prepend(closable);
