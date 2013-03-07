@@ -236,7 +236,6 @@
 		},
 		
 		render: function (box) {
-            console.log('render');
 			// event before
 			var eventData = this.trigger({ phase: 'before', type: 'render', target: this.name, box: box });	
 			if (eventData.stop === true) return false;
@@ -287,7 +286,6 @@
                 var tdEl = json2html(elObj);
                 //append the innerHTML
                 var inner = this.getItemHTML(it);
-                console.log("inner is: " , inner);
                 if(typeof inner === 'object' && inner.length) {
                     inner.forEach(function(el) {
                         $(tdEl).append(el);
@@ -300,7 +298,6 @@
             }
             //finally append the row to the table
             $(tableEl).append(row);
-            console.log("tableEl is",tableEl);
 
             //at this point should be an element already
 			$(this.box).append(divEl);
@@ -326,7 +323,6 @@
 			
 			var jq_el = $(this.box).find('.w2ui-toolbar #'+ this.name +'_item_'+ it.id);
 			var html  = this.getItemHTML(it);
-            console.log("html obj is: " + html);
 			if (jq_el.length == 0) {
 				// does not exist - create it
 				var addStyle = '';
@@ -421,12 +417,18 @@
                     obj.doDropOut(id,0);
                     obj.doClick(id, event, f);
                 });
-                var divKey = "div." + tmp[1] + typeof tmp[1] != "undefined" ? ".w2ui-icon" : "";
-                var tdObj = {
-                        style: "padding: 3px 3px 3px 6px"
+                var divKey = "div";
+                if(typeof tmp[1] != 'undefined') {
+                    divKey += "." + tmp[1] + ".w2ui-icon";
                 }
-                tdObj[divKey] = "";
+                var tdObj = {
+                        td: {
+                            style: "padding: 3px 3px 3px 6px"
+                        }
+                }
+                tdObj['td'][divKey] = "";
                 $(row).append(json2html(tdObj));
+           
                 $(row).append(json2html({
                     td: {
                         style: "padding: 3px 10px 3px 3px",
@@ -575,7 +577,6 @@
 					break;
 			}
 			// drop div
-           console.log("tableEl:" , tableEl);
             
             var dropEl = json2html({"div.w2ui-drop-box": ""});
             var els = [tableEl,dropEl];
