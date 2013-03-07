@@ -236,6 +236,7 @@
 		},
 		
 		render: function (box) {
+            console.log('render');
 			// event before
 			var eventData = this.trigger({ phase: 'before', type: 'render', target: this.name, box: box });	
 			if (eventData.stop === true) return false;
@@ -247,28 +248,62 @@
 			if (!this.box) return;
 			// render all buttons
 			$(this.box).html('');
-			var html = '<div id="'+ this.name +'_toolbar" class="w2ui-reset w2ui-toolbar">'+
-					   '<table cellspacing="0" cellpadding="0" width="100%">'+
-					   '<tr>';
-			for (var i = 0; i < this.items.length; i++) {
-				var it = this.items[i];
-				if (it == null)  continue;
-				var addStyle = '';
-				if (it.hidden) { addStyle += 'display: none;'; }
-				if (it.disabled) { addStyle += 'opacity: 0.2; -moz-opacity: 0.2; -webkit-opacity: 0.2; -o-opacity: 0.2; filter:alpha(opacity=20);'; }
-				if (it.type == 'spacer') {
-					html += '<td width="100%" id="'+ this.name +'_item_'+ it.id +'" align="right"></td>';
-				} else {
-					html += '<td id="'+ this.name + '_item_'+ it.id +'" style="'+ addStyle +'" valign="middle">'+ 
-								this.getItemHTML(it) + 
-							'</td>';
-				}
-			}
-			html += '<td width="100%" id="'+ this.name +'_right" align="right">'+ this.right +'</td>';
-			html += '</tr>'+
-					'</table>'+
-					'</div>';
-			$(this.box).append(html);
+            var divKey = "div#" + this.name + "_toolbar" + ".w2ui-reset.w2ui-toolbar";
+            var divObj = {};
+            divObj[divKey] = "";
+            var divEl = json2html(divObj);
+            var tableEl = json2html({
+                "table": {
+                    "cellspacing": "0",
+                    "cellpadding": "0",
+                    width: "100%"
+                }
+            });
+            $(divEl).append(tableEl);
+            var row = json2html({
+                "tr": ""
+            });
+            for(var i = 0; i < this.items.length; i++) {
+                var it = this.items[i];
+                if (it == null) continue;
+                var addStyle = '';
+                if(it.hidden) { addStyle += 'display: none;' }
+                if(it.disabled) { addStyle += "opacity: 0.2; -moz-opacity: 0.2; -webkit-opacity: 0.2; -o-opacity: 0.2; filter: alpha(opacity=20);";}
+                var elObj = {};
+                if(it.type == 'spacer') {
+                    var spacerKey = "td#" + this.name + "_item_" + it.id;
+                    elObj[spacerKey] = {
+                        "align": "right"
+                    };
+                    //then do something...
+                } else {
+                    var tdKey = "td#" + this.name + "_item_" + it.id;
+                    elObj[tdKey] = {
+                        style: addStyle,
+                        valign: "middle"
+                    };
+                }
+                //render as an HTML element
+                var tdEl = json2html(elObj);
+                //append the innerHTML
+                var inner = this.getItemHTML(it);
+                console.log("inner is: " , inner);
+                if(typeof inner === 'object' && inner.length) {
+                    inner.forEach(function(el) {
+                        $(tdEl).append(el);
+                    });
+                } else {
+                    $(tdEl).append(inner);
+                }
+                //now add the td to the tr
+                $(row).append(tdEl);
+            }
+            //finally append the row to the table
+            $(tableEl).append(row);
+            console.log("tableEl is",tableEl);
+
+            //at this point should be an element already
+			$(this.box).append(divEl);
 			// append global drop-box that can be on top of everything
 			if ($('#w2ui-global-drop').length == 0) $('body').append('<div id="w2ui-global-drop" class="w2ui-reset"></div>');
 			// event after
@@ -291,6 +326,7 @@
 			
 			var jq_el = $(this.box).find('.w2ui-toolbar #'+ this.name +'_item_'+ it.id);
 			var html  = this.getItemHTML(it);
+            console.log("html obj is: " + html);
 			if (jq_el.length == 0) {
 				// does not exist - create it
 				var addStyle = '';
@@ -342,6 +378,13 @@
 		
 		getMenuHTML: function (item) { 
 			var menu_html = "<table cellspacing=\"0\" style=\"padding: 5px 0px;\">";
+            var menuObj = {
+                "table": {
+                    "cellspacing": "0",
+                    style: "padding: 5px 0px;"
+                }
+            };
+            var menuEl = json2html(menuObj);
 			for (var f = 0; f < item.items.length; f++) { 
 				if (typeof item.items[f] == 'string') {
 					var tmp = item.items[f].split('|');
@@ -359,16 +402,40 @@
 					tmp[1] = item.items[f].icon;
 					tmp[2] = typeof item.items[f].value != 'undefined' ? item.items[f].value : item.items[f].text;
 				}
-				menu_html += "<tr style=\"cursor: default;\" "+
-					"	onmouseover=\"$(this).addClass('w2ui-selected');\" onmouseout=\"$(this).removeClass('w2ui-selected');\" "+
-					"	onclick=\"var obj = w2ui['"+ this.name +"']; obj.doDropOut('"+ item.id +"', 0); "+
-					"			  obj.doClick('"+ item.id +"', event, '"+ f +"');\">"+
-					"<td style='padding: 3px 3px 3px 6px'><div class=\""+ (typeof tmp[1] != 'undefined' ? 'w2ui-icon ' : '') + tmp[1] +"\"></div></td>"+
-					"<td style='padding: 3px 10px 3px 3px'>"+ tmp[0] +"</td>"+
-					"</tr>";
-			}
-			menu_html += "</table>";
-			return menu_html;
+                var rowObj = {
+                    tr: {
+                        style: "cursor: default;"
+                    }
+                }
+                var row = json2html(rowObj);
+                var name = this.name,
+                    id = item.id;
+                $(row).mouseover(function() {
+                    $(this).addClass('w2ui-selected');
+                });
+                $(row).mouseout(function() {
+                    $(this).removeClass('w2ui-selected');
+                });
+                $(row).click(function() {
+                    var obj = w2ui[name];
+                    obj.doDropOut(id,0);
+                    obj.doClick(id, event, f);
+                });
+                var divKey = "div." + tmp[1] + typeof tmp[1] != "undefined" ? ".w2ui-icon" : "";
+                var tdObj = {
+                        style: "padding: 3px 3px 3px 6px"
+                }
+                tdObj[divKey] = "";
+                $(row).append(json2html(tdObj));
+                $(row).append(json2html({
+                    td: {
+                        style: "padding: 3px 10px 3px 3px",
+                        html: tmp[0]
+                    }
+                }));
+                $(menuEl).append(row);
+            }
+                return menuEl;
 		},
 		
 		getItemHTML: function (item) {
@@ -395,48 +462,129 @@
 	
 			switch (item.type) {
 				case 'menu':
-					item.html = this.getMenuHTML(item);
+                    var menuEl = this.getMenuHTML(item);
+                    item.html = menuEl;
 				case 'button':	
 				case 'check':
 				case 'radio':
 				case 'drop':
-					html +=  '<table cellpadding="0" cellspacing="0" title="'+ item.hint +'" class="w2ui-tab0 '+ (item.checked ? 'checked' : '') +'" '+
-							 '       onmouseover = "var el=w2ui[\''+ this.name + '\']; if (el) el.doOver(\''+ item.id +'\', event);" '+
-							 '       onmouseout  = "var el=w2ui[\''+ this.name + '\']; if (el) el.doOut(\''+ item.id +'\', event);" '+
-							 '       onmousedown = "var el=w2ui[\''+ this.name + '\']; if (el) el.doDown(\''+ item.id +'\', event);" '+
-							 '       onmouseup   = "var el=w2ui[\''+ this.name + '\']; if (el) el.doClick(\''+ item.id +'\', event);" '+
-							 '>'+
-							 '<tr><td>'+
-							 '  <table cellpadding="1" cellspacing="0" class="w2ui-tab1 '+ (item.checked ? 'checked' : '') +'">'+
-							 '  <tr>'+
-									(item.img != '' ? '<td><div class="w2ui-tb-image w2ui-icon '+ item.img +'"></div></td>' : '<td>&nbsp;</td>') +
-									(item.caption != '' ? '<td class="w2ui-tb-caption" style="'+ addToText +'" nowrap>'+ item.caption +'</td>' : '') +
-									(((item.type == 'drop' || item.type == 'menu') && item.arrow !== false) ? 
-										'<td class="w2ui-tb-down" nowrap>&nbsp;&nbsp;&nbsp;</td>' : '') +
-							 '  </tr></table>'+
-							 '</td></tr></table>';
-					break;
+                    var tableObj = {};
+                    var tableKey = "table.w2ui-tab0"/* + (item.checked ? ".checked" : "");*/
+                    tableObj[tableKey] = {
+                            cellpadding: "0",
+                            cellspacing: "0",
+                            title: item.hint
+                    };
+                    var tableEl = json2html(tableObj);
+                    //pull out some values for scope purposes
+                    var name = this.name,
+                        id = item.id;
+                    //create listeners by attaching them to the element
+                    $(tableEl).mouseover(function() {
+                        var el = w2ui[name];
+                        if(el) el.doOver(id,event);
+                    });
+                    $(tableEl).mouseout(function() {
+                        var el = w2ui[name];
+                        if(el) el.doOut(id,event);
+                    });
+                    $(tableEl).mousedown(function() {
+                        var el = w2ui[name];
+                        if(el) el.doDown(id,event);
+                    });
+                    $(tableEl).mouseup(function() {
+                        var el = w2ui[name];
+                        if(el) el.doClick(id,event);
+                    });
+
+                    var subObj = {};
+                    var subKey = "table.w2ui-tab1" /*+ item.checked ? ".checked" : "";*/
+                    subObj[subKey] = {
+                        cellpadding: "1",
+                        cellspacing:"0"
+                    };
+                    var subEl = json2html(subObj);
+                    var tr = json2html({"tr": ""});
+                    subEl.appendChild(tr);
+                    //image
+                    if(item.img != '') {
+                        var imageObj = {};
+                        var imageKey = "div.w2ui-tb-image.w2ui-icon." + item.img;
+                        imageObj[imageKey] = {}; 
+                    }
+                    tr.appendChild(json2html({
+                        "td" : item.img != '' ? json2html(imageObj) : " "
+                    }));
+                    //caption
+                    if(item.caption != '') {
+                        var captionObj = {};
+                        var captionKey = "td.w2ui-tb-caption";
+                        captionObj[captionKey] = {
+                            style: addToText,
+                            nowrap: "",
+                            html: item.caption
+                        }; 
+                        tr.appendChild(json2html(captionObj));
+                    }
+                    //down?
+					if((item.type == 'drop' || item.type == 'menu') && item.arrow !== false) {
+                        tr.appendChild(json2html({
+                            "td.w2ui-tb-down": {
+                                html: "   ",
+                                nowrap: ""
+                            }
+                        }));
+                    } 
+                    var tbody = json2html({tbody: ""});
+                    var td = json2html({td: ""});
+                    td.appendChild(subEl);
+                    var tr = json2html({tr: ""});
+                    tr.appendChild(td);
+                    tbody.appendChild(tr);
+                    tableEl.appendChild(tbody);
+										break;
 								
 				case 'break':
-					html +=  '<table cellpadding="0" cellspacing="0" style="width 1px; height: 22px; margin-top: 2px;"><tr>'+
-							 '    <td><div class="w2ui-break">&nbsp;</div></td>'+
-							 '</tr></table>';
+                    var elObj = {
+                        table: {
+                            td: {
+                                "div.w2ui-break": " "
+                            }
+                        }
+                };
+                    var tableEl = json2html(elObj);
+
 					break;
 	
 				case 'html':
-					html +=  '<table cellpadding="0" cellspacing="0" style="height: 22px; margin-top: 2px;'+ addToText +';"><tr>'+
-							 '    <td nowrap>' + item.html + '</td>'+
-							 '</tr></table>';
+                    var td = json2html({
+                        "td": {
+                          nowrap: ""
+                        }
+                    });
+                    td.appendChild(item.html);
+                    var elObj = {
+                        table: {
+                            cellpadding: "0",
+                            cellspacing: "0",
+                            style: "height: 22px; margin-top: 2px; " + addToText
+                        }
+                    };
+                    var tableEl = json2html(elObj);
+                    tableEl.appendChild(td);
 					break;
 			}
 			// drop div
-			html += '<div class="w2ui-drop-box"></div>';
+           console.log("tableEl:" , tableEl);
+            
+            var dropEl = json2html({"div.w2ui-drop-box": ""});
+            var els = [tableEl,dropEl];
 			
 			var newHTML = '';
-			if (typeof item.onRender == 'function') newHTML = item.onRender.call(this, item.id, html);
-			if (typeof this.onRender == 'function') newHTML = this.onRender(item.id, html);
-			if (newHTML != '' && typeof newHTML != 'undefined') html = newHTML;
-			return html;					
+			if (typeof item.onRender == 'function') newHTML = item.onRender.call(this, item.id, els);
+			if (typeof this.onRender == 'function') newHTML = this.onRender(item.id, els);
+			if (newHTML != '' && typeof newHTML != 'undefined') els = newHTML;
+			return els;					
 		},
 		
 		doOver: function (id) {
